@@ -9,8 +9,8 @@ import uuid
 import json
 import asyncio
 
-from . import storage
-from .council import (
+import storage
+from council import (
     run_full_council,
     generate_conversation_title,
     stage1_collect_responses,
@@ -18,7 +18,7 @@ from .council import (
     stage3_synthesize_final,
     calculate_aggregate_rankings
 )
-from .config import CORS_ORIGINS
+from config import CORS_ORIGINS
 
 app = FastAPI(title="XMARCS LLM Council API")
 
