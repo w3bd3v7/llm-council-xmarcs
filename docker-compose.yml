@@ -28,7 +28,7 @@ services:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - GOOGLE_API_KEY=${GOOGLE_API_KEY}
       - XAI_API_KEY=${XAI_API_KEY}
-      - ZHIPU_API_KEY=${ZHIPU_API_KEY}
+      - ZAI_GLM_XO_API_KEY=${ZAI_GLM_XO_API_KEY}
       
       # Database
       - DATABASE_URL=postgresql://llmcouncil:llmcouncil_password@postgres:5432/llmcouncil
