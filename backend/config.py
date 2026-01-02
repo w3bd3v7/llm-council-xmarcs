@@ -42,7 +42,7 @@ COUNCIL_MODELS = [
     {
         "name": "Grok",
         "provider": "xai",
-        "model_id": "grok-2-latest",
+        "model_id": "grok-2",
         "role": "Contrarian perspective and devil's advocate"
     }
 ]
@@ -51,7 +51,7 @@ COUNCIL_MODELS = [
 CHAIRMAN_MODEL = {
     "name": "GLM-4",
     "provider": "zhipu",
-    "model_id": "glm-4-flash",
+    "model_id": "glm-4",
     "role": "Synthesis and final decision-making with strong reasoning"
 }
 
