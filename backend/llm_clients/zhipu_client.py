@@ -29,7 +29,7 @@ async def query_glm(
     payload = {
         "model": model_id,
         "messages": messages,
-        "max_tokens": 4096,
+        "max_tokens": 16384,
         "temperature": 0.3,  # Lower temp for chairman synthesis
     }
 
