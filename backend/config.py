@@ -19,30 +19,30 @@ GOOGLE_API_URL = "https://generativelanguage.googleapis.com/v1beta/models"
 XAI_API_URL = "https://api.x.ai/v1/chat/completions"
 ZHIPU_API_URL = "https://open.bigmodel.cn/api/paas/v4/chat/completions"
 
-# Council Members (4 debaters)
+# Council Members (4 debaters) - UPDATED MODEL IDs
 COUNCIL_MODELS = [
     {
         "name": "Claude Sonnet 4.5",
         "provider": "anthropic",
-        "model_id": "claude-3-5-sonnet-20241022",
+        "model_id": "claude-sonnet-4-20250514",
         "role": "Careful, nuanced reasoning and analysis"
     },
     {
-        "name": "GPT-4",
+        "name": "GPT-4o",
         "provider": "openai",
-        "model_id": "gpt-4",
+        "model_id": "gpt-4o",
         "role": "Creative, broad thinking and innovative solutions"
     },
     {
-        "name": "Gemini Pro",
+        "name": "Gemini 2.0 Flash",
         "provider": "google",
-        "model_id": "gemini-pro",
+        "model_id": "gemini-2.0-flash",
         "role": "Analytical, data-driven insights"
     },
     {
         "name": "Grok",
         "provider": "xai",
-        "model_id": "grok-beta",
+        "model_id": "grok-2-latest",
         "role": "Contrarian perspective and devil's advocate"
     }
 ]
@@ -51,7 +51,7 @@ COUNCIL_MODELS = [
 CHAIRMAN_MODEL = {
     "name": "GLM-4",
     "provider": "zhipu",
-    "model_id": "glm-4",
+    "model_id": "glm-4-flash",
     "role": "Synthesis and final decision-making with strong reasoning"
 }
 
@@ -65,7 +65,8 @@ DATABASE_URL = os.getenv(
 HOST = "0.0.0.0"
 PORT = 8001
 CORS_ORIGINS = [
-    "http://localhost:5173", "http://72.60.126.230:5173",
+    "http://localhost:5173",
+    "http://72.60.126.230:5173",
     "http://localhost:3000",
     os.getenv("FRONTEND_URL", "")
 ]
