@@ -1,8 +1,8 @@
 """3-stage LLM Council orchestration for XMARCS."""
 
 from typing import List, Dict, Any, Tuple
-from .llm_clients import query_models_parallel, query_model
-from .config import COUNCIL_MODELS, CHAIRMAN_MODEL
+from llm_clients import query_models_parallel, query_model
+from config import COUNCIL_MODELS, CHAIRMAN_MODEL
 
 
 async def stage1_collect_responses(user_query: str) -> List[Dict[str, Any]]:
