@@ -2,7 +2,7 @@
 
 import httpx
 from typing import List, Dict, Any, Optional
-from ..config import GOOGLE_API_KEY, GOOGLE_API_URL
+from config import GOOGLE_API_KEY, GOOGLE_API_URL
 
 
 async def query_gemini(

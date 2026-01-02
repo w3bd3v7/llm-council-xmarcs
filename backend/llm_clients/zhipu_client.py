@@ -2,7 +2,7 @@
 
 import httpx
 from typing import List, Dict, Any, Optional
-from ..config import ZHIPU_API_KEY, ZHIPU_API_URL
+from config import ZHIPU_API_KEY, ZHIPU_API_URL
 
 
 async def query_glm(

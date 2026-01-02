@@ -216,5 +216,5 @@ async def send_message_stream(conversation_id: str, request: SendMessageRequest)
 
 if __name__ == "__main__":
     import uvicorn
-    from .config import HOST, PORT
+    from config import HOST, PORT
     uvicorn.run(app, host=HOST, port=PORT)
