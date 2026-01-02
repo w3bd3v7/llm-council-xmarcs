@@ -2,7 +2,7 @@
 
 import httpx
 from typing import List, Dict, Any, Optional
-from config import ZHIPU_API_KEY, ZHIPU_API_URL
+from config import ZAI_GLM_XO_API_KEY, ZHIPU_API_URL
 
 
 async def query_glm(
@@ -22,7 +22,7 @@ async def query_glm(
         Response dict with 'content', or None if failed
     """
     headers = {
-        "Authorization": f"Bearer {ZHIPU_API_KEY}",
+        "Authorization": f"Bearer {ZAI_GLM_XO_API_KEY}",
         "Content-Type": "application/json",
     }
 

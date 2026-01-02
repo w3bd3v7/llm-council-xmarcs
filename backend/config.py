@@ -10,14 +10,14 @@ ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 XAI_API_KEY = os.getenv("XAI_API_KEY")
-ZHIPU_API_KEY = os.getenv("ZHIPU_API_KEY")
+ZAI_GLM_XO_API_KEY = os.getenv("ZAI_GLM_XO_API_KEY")
 
 # API Endpoints
 ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages"
 OPENAI_API_URL = "https://api.openai.com/v1/chat/completions"
 GOOGLE_API_URL = "https://generativelanguage.googleapis.com/v1beta/models"
 XAI_API_URL = "https://api.x.ai/v1/chat/completions"
-ZHIPU_API_URL = "https://open.bigmodel.cn/api/paas/v4/chat/completions"
+ZHIPU_API_URL = "https://api.z.ai/api/paas/v4/chat/completions"
 
 # Council Members (4 debaters) - UPDATED MODEL IDs
 COUNCIL_MODELS = [
