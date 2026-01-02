@@ -65,7 +65,7 @@ DATABASE_URL = os.getenv(
 HOST = "0.0.0.0"
 PORT = 8001
 CORS_ORIGINS = [
-    "http://localhost:5173",
+    "http://localhost:5173", "http://72.60.126.230:5173",
     "http://localhost:3000",
     os.getenv("FRONTEND_URL", "")
 ]
