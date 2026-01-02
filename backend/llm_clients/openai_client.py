@@ -2,7 +2,7 @@
 
 import httpx
 from typing import List, Dict, Any, Optional
-from ..config import OPENAI_API_KEY, OPENAI_API_URL
+from config import OPENAI_API_KEY, OPENAI_API_URL
 
 MAX_OUTPUT_TOKENS = 16384
 

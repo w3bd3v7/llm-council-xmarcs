@@ -2,7 +2,7 @@
 
 import httpx
 from typing import List, Dict, Any, Optional
-from ..config import ANTHROPIC_API_KEY, ANTHROPIC_API_URL
+from config import ANTHROPIC_API_KEY, ANTHROPIC_API_URL
 
 MAX_OUTPUT_TOKENS = 16384
 

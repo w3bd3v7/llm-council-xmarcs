@@ -2,7 +2,7 @@
 
 import httpx
 from typing import List, Dict, Any, Optional
-from ..config import XAI_API_KEY, XAI_API_URL
+from config import XAI_API_KEY, XAI_API_URL
 
 MAX_OUTPUT_TOKENS = 16384
 
