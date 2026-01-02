@@ -1,1 +1,1 @@
-"""XMARCS LLM Council backend package."""
+"""The Board Room - XMARCS Strategic Council Backend."""

@@ -1,22 +1,22 @@
-"""Unified LLM client router."""
+"""LLM client modules for The Board Room."""
 
+import asyncio
 from typing import List, Dict, Any, Optional
-from llm_clients.anthropic_client import query_claude
-from llm_clients.openai_client import query_gpt
-from llm_clients.google_client import query_gemini
-from llm_clients.xai_client import query_grok
-from llm_clients.zhipu_client import query_glm
+
+from .anthropic_client import query_claude
+from .openai_client import query_gpt
+from .google_client import query_gemini
+from .xai_client import query_grok
+from .zhipu_client import query_glm
 
 
 async def query_model(
     provider: str,
     model_id: str,
     messages: List[Dict[str, str]],
-    timeout: float = 120.0
+    timeout: float = 180.0
 ) -> Optional[Dict[str, Any]]:
-    """
-    Route query to the appropriate LLM client based on provider.
-    """
+    """Query a single model."""
     if provider == "anthropic":
         return await query_claude(model_id, messages, timeout)
     elif provider == "openai":
@@ -28,25 +28,23 @@ async def query_model(
     elif provider == "zhipu":
         return await query_glm(model_id, messages, timeout)
     else:
-        print(f"Unknown provider: {provider}")
         return None
 
 
 async def query_models_parallel(
     models: List[Dict[str, str]],
-    messages: List[Dict[str, str]]
-) -> Dict[str, Optional[Dict[str, Any]]]:
+    messages: List[Dict[str, str]],
+    timeout: float = 180.0
+) -> Dict[str, Dict[str, Any]]:
     """Query multiple models in parallel."""
-    import asyncio
-
-    tasks = [
-        query_model(model['provider'], model['model_id'], messages)
-        for model in models
-    ]
-
-    responses = await asyncio.gather(*tasks)
-
-    return {
-        model['name']: response
-        for model, response in zip(models, responses)
-    }
+    tasks = []
+    model_names = []
+    
+    for model_config in models:
+        task = query_model(model_config['provider'], model_config['model_id'], messages, timeout)
+        tasks.append(task)
+        model_names.append(model_config['name'])
+    
+    results = await asyncio.gather(*tasks, return_exceptions=True)
+    
+    return {name: result for name, result in zip(model_names, results) if not isinstance(result, Exception) and result is not None}

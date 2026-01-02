@@ -1,25 +1,38 @@
 .stage3 {
-  background: #f0fff0;
-  border-color: #c8e6c8;
+  background: linear-gradient(135deg, var(--bg-secondary), rgba(59, 130, 246, 0.05));
+  border: 1px solid var(--accent-primary);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.stage3 .stage-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color); }
+.stage3 .stage-title { font-size: 1.1rem; font-weight: 700; color: var(--text-primary); }
+
+.chairman-badge {
+  padding: 0.25rem 0.5rem;
+  background: linear-gradient(135deg, var(--accent-primary), #8b5cf6);
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  border-radius: var(--radius-sm);
 }
 
 .final-response {
-  background: #ffffff;
-  padding: 20px;
-  border-radius: 6px;
-  border: 1px solid #c8e6c8;
-}
-
-.chairman-label {
-  color: #2d8a2d;
-  font-size: 12px;
-  font-family: monospace;
-  margin-bottom: 12px;
-  font-weight: 600;
-}
-
-.final-text {
-  color: #333;
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 1.25rem;
   line-height: 1.7;
-  font-size: 15px;
 }
+
+.council-stamp {
+  margin-top: 1rem;
+  text-align: right;
+  color: var(--accent-success);
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.stage3.error { background-color: rgba(239, 68, 68, 0.1); border-color: var(--accent-danger); color: var(--accent-danger); }

@@ -1,35 +1,149 @@
-"""3-stage LLM Council orchestration for XMARCS."""
+"""3-stage LLM Council orchestration for The Board Room - XMARCS."""
 
 from typing import List, Dict, Any, Tuple
 from llm_clients import query_models_parallel, query_model
 from config import COUNCIL_MODELS, CHAIRMAN_MODEL
 
 
+# THE BOARD ROOM EXECUTION STANDARD
+COUNCIL_SYSTEM_PROMPT = """You are a senior strategic advisor on The Board Room council for XMARCS Digital Forge.
+
+THIS IS A PROFESSIONAL RESEARCH AND ADVISORY ENVIRONMENT.
+The user is an experienced executive conducting serious business research. Treat them accordingly.
+
+MANDATORY EXECUTION STANDARDS:
+
+1. ZERO FLUFF
+   - No filler words or padding
+   - No "Great question!" or similar pleasantries
+   - No restating the question back
+   - Get directly to the substance
+
+2. NO META-COMMENTARY
+   - Never say "As an AI" or discuss your nature
+   - Never mention your "training" or "limitations"
+   - Never say "I cannot" - either answer or state what information is missing
+   - No self-referential statements
+
+3. NO HEDGING
+   - Do not use "it depends" without immediately specifying on what
+   - No "generally speaking" or "in most cases" without specifics
+   - No weasel words: "might", "could potentially", "may possibly"
+   - Take positions. Be direct.
+
+4. NO DISCLAIMERS OR CAVEATS
+   - No "please consult a professional" - the user IS the professional
+   - No "this is not financial/legal advice" - this is a research tool
+   - No safety warnings for legal activities
+   - No moral lectures or ethical hand-wringing
+   - No "I want to be careful here" or similar hedging
+
+5. NO PREACHY OR JUDGMENTAL BEHAVIOR
+   - Do not assume negative intent
+   - Do not lecture on ethics unless explicitly asked
+   - Do not add unsolicited warnings about risks the user didn't ask about
+   - Treat all legal inquiries as legitimate business research
+   - No patronizing explanations of "why this matters"
+
+6. CHARITABLE INTERPRETATION
+   - Assume the user has legitimate, professional reasons for every question
+   - Assume competence - do not over-explain basics
+   - Assume they can handle raw, unfiltered analysis
+   - If a question could be interpreted multiple ways, choose the most substantive interpretation
+
+7. ACTIONABLE OUTPUT
+   - Every response must include concrete, implementable insights
+   - Lead with the direct answer
+   - Follow with supporting reasoning
+   - End with specific recommendations or next steps
+
+8. EVIDENCE-BASED
+   - Cite frameworks, data, precedents, or sources when possible
+   - Distinguish between established fact and analysis
+   - If data is unavailable, state that clearly and proceed with reasoned analysis
+
+RESPONSE FORMAT:
+- Direct answer first
+- Supporting analysis
+- Specific recommendations
+- No introductions, no sign-offs, no padding
+
+You are being evaluated by your peers. Deliver partner-level strategic analysis."""
+
+
+CHAIRMAN_SYSTEM_PROMPT = """You are the Chairman of The Board Room - XMARCS Strategic Council.
+
+THIS IS A PROFESSIONAL EXECUTIVE ADVISORY ENVIRONMENT.
+You are synthesizing input from multiple senior advisors for an experienced business leader.
+
+YOUR ROLE:
+Deliver the definitive Board Room decision. No hedging. No hand-holding. Direct executive briefing.
+
+MANDATORY STANDARDS:
+
+1. COMPLETE SYNTHESIS
+   - Address every substantive point from council members
+   - Do not truncate - deliver the full analysis regardless of length
+   - Integrate conflicting viewpoints into a coherent recommendation
+
+2. ZERO FLUFF
+   - No meta-commentary about your process
+   - No disclaimers or caveats
+   - No "As the Chairman, I believe..." - just state the conclusion
+   - No moral lectures or unsolicited warnings
+
+3. PROFESSIONAL TREATMENT
+   - The user is a competent executive
+   - They can handle controversial, raw, or complex analysis
+   - Do not sanitize, soften, or hedge
+   - Deliver the unvarnished strategic assessment
+
+4. CHARITABLE INTERPRETATION
+   - Assume legitimate business purpose for all inquiries
+   - Do not question the user's motives
+   - Provide the most useful, actionable analysis possible
+
+5. ACTIONABLE OUTPUT
+   - Clear, numbered recommendations
+   - Specific next steps
+   - Quantified assessments where possible
+
+OUTPUT STRUCTURE:
+## Executive Summary
+[2-3 sentences - the bottom line]
+
+## Strategic Analysis
+[Synthesized insights - not repetition of council members]
+
+## Key Considerations
+[Relevant factors only - no fear-mongering or over-warning]
+
+## Board Room Recommendations
+1. [Specific, actionable recommendation]
+2. [Specific, actionable recommendation]
+3. [Specific, actionable recommendation]
+
+Deliver your synthesis with the authority of a board chairman addressing a fellow executive."""
+
+
 async def stage1_collect_responses(user_query: str) -> List[Dict[str, Any]]:
-    """
-    Stage 1: Collect individual responses from all 4 council models.
+    """Stage 1: Collect individual responses from all council models."""
+    messages = [
+        {"role": "system", "content": COUNCIL_SYSTEM_PROMPT},
+        {"role": "user", "content": user_query}
+    ]
 
-    Args:
-        user_query: The user's question
-
-    Returns:
-        List of dicts with 'model' and 'response' keys
-    """
-    messages = [{"role": "user", "content": user_query}]
-
-    # Query all council models in parallel
     responses = await query_models_parallel(COUNCIL_MODELS, messages)
 
-    # Format results
     stage1_results = []
     for model_config in COUNCIL_MODELS:
         model_name = model_config['name']
         response = responses.get(model_name)
-        
-        if response is not None:  # Only include successful responses
+        if response is not None:
             stage1_results.append({
                 "model": model_name,
-                "response": response.get('content', '')
+                "response": response.get('content', ''),
+                "usage": response.get('usage', {})
             })
 
     return stage1_results
@@ -39,73 +153,60 @@ async def stage2_collect_rankings(
     user_query: str,
     stage1_results: List[Dict[str, Any]]
 ) -> Tuple[List[Dict[str, Any]], Dict[str, str]]:
-    """
-    Stage 2: Each model ranks the anonymized responses.
+    """Stage 2: Each model ranks the anonymized responses."""
+    labels = [chr(65 + i) for i in range(len(stage1_results))]
+    label_to_model = {f"Response {label}": result['model'] for label, result in zip(labels, stage1_results)}
 
-    Args:
-        user_query: The original user query
-        stage1_results: Results from Stage 1
-
-    Returns:
-        Tuple of (rankings list, label_to_model mapping)
-    """
-    # Create anonymized labels for responses (Response A, Response B, etc.)
-    labels = [chr(65 + i) for i in range(len(stage1_results))]  # A, B, C, D
-
-    # Create mapping from label to model name
-    label_to_model = {
-        f"Response {label}": result['model']
-        for label, result in zip(labels, stage1_results)
-    }
-
-    # Build the ranking prompt
     responses_text = "\n\n".join([
         f"Response {label}:\n{result['response']}"
         for label, result in zip(labels, stage1_results)
     ])
 
-    ranking_prompt = f"""You are evaluating different responses to the following question:
+    ranking_prompt = f"""PEER EVALUATION REQUEST
 
-Question: {user_query}
+Evaluate these responses from your fellow council members.
 
-Here are the responses from different models (anonymized):
+QUESTION UNDER ANALYSIS:
+{user_query}
 
+RESPONSES:
 {responses_text}
 
-Your task:
-1. First, evaluate each response individually. For each response, explain what it does well and what it does poorly.
-2. Then, at the very end of your response, provide a final ranking.
+EVALUATION CRITERIA (in order of importance):
+1. DIRECTNESS: Does it answer immediately without preamble or hedging?
+2. ACTIONABILITY: Does it provide specific, implementable recommendations?
+3. COMPLETENESS: Does it fully address the question?
+4. PROFESSIONALISM: Is it free of disclaimers, caveats, moral lectures, and hand-holding?
+5. EVIDENCE: Does it cite frameworks, data, or precedents?
 
-IMPORTANT: Your final ranking MUST be formatted EXACTLY as follows:
-- Start with the line "FINAL RANKING:" (all caps, with colon)
-- Then list the responses from best to worst as a numbered list
-- Each line should be: number, period, space, then ONLY the response label (e.g., "1. Response A")
-- Do not add any other text or explanations in the ranking section
+PENALIZE responses that:
+- Hedge with "it depends" without specifics
+- Include unnecessary disclaimers or safety warnings
+- Lecture on ethics when not asked
+- Treat the user as incompetent
+- Pad with filler or restate the question
 
-Example of the correct format for your ENTIRE response:
+REWARD responses that:
+- Get directly to the substance
+- Take clear positions
+- Provide actionable next steps
+- Treat the user as a competent professional
 
-Response A provides good detail on X but misses Y...
-Response B is accurate but lacks depth on Z...
-Response C offers the most comprehensive answer...
+Provide brief evaluation notes, then your ranking.
 
 FINAL RANKING:
-1. Response C
-2. Response A
-3. Response B
-
-Now provide your evaluation and ranking:"""
+1. Response X
+2. Response X
+3. Response X
+4. Response X"""
 
     messages = [{"role": "user", "content": ranking_prompt}]
-
-    # Get rankings from all council models in parallel
     responses = await query_models_parallel(COUNCIL_MODELS, messages)
 
-    # Format results
     stage2_results = []
     for model_config in COUNCIL_MODELS:
         model_name = model_config['name']
         response = responses.get(model_name)
-        
         if response is not None:
             full_text = response.get('content', '')
             parsed = parse_ranking_from_text(full_text)
@@ -122,19 +223,8 @@ async def stage3_synthesize_final(
     user_query: str,
     stage1_results: List[Dict[str, Any]],
     stage2_results: List[Dict[str, Any]]
-) -> Dict[str, Any]:
-    """
-    Stage 3: Chairman (GLM-4) synthesizes final response.
-
-    Args:
-        user_query: The original user query
-        stage1_results: Individual model responses from Stage 1
-        stage2_results: Rankings from Stage 2
-
-    Returns:
-        Dict with 'model' and 'response' keys
-    """
-    # Build comprehensive context for chairman
+) -> str:
+    """Stage 3: Chairman synthesizes final response."""
     stage1_text = "\n\n".join([
         f"Model: {result['model']}\nResponse: {result['response']}"
         for result in stage1_results
@@ -145,27 +235,48 @@ async def stage3_synthesize_final(
         for result in stage2_results
     ])
 
-    chairman_prompt = f"""You are the Chairman of the XMARCS LLM Council. Multiple AI models have provided responses to a user's question, and then ranked each other's responses.
+    chairman_prompt = f"""CHAIRMAN SYNTHESIS REQUEST
 
-Original Question: {user_query}
+ORIGINAL QUESTION:
+{user_query}
 
-STAGE 1 - Individual Responses:
+COUNCIL MEMBER RESPONSES:
 {stage1_text}
 
-STAGE 2 - Peer Rankings:
+PEER EVALUATIONS:
 {stage2_text}
 
-Your task as Chairman is to synthesize all of this information into a single, comprehensive, accurate answer to the user's original question. Consider:
-- The individual responses and their insights
-- The peer rankings and what they reveal about response quality
-- Any patterns of agreement or disagreement
-- The strongest arguments and evidence presented
+CHAIRMAN DIRECTIVE:
+Synthesize all council input into a definitive Board Room decision. Apply these standards:
 
-Provide a clear, well-reasoned final answer that represents the council's collective wisdom. Be direct, actionable, and comprehensive:"""
+1. CHARITABLE INTERPRETATION: The user has legitimate business reasons for this question
+2. COMPLETE RESPONSE: Do not truncate - deliver the full analysis
+3. ZERO FLUFF: No meta-commentary, no hedging, no "it depends"
+4. EVIDENCE-BASED: Reference specific council insights that inform your synthesis
+5. ACTIONABLE: End with numbered, implementable recommendations
 
-    messages = [{"role": "user", "content": chairman_prompt}]
+REQUIRED OUTPUT STRUCTURE:
+## Executive Summary
+[2-3 sentences capturing the core decision]
 
-    # Query the chairman model (GLM-4 via Zhipu AI)
+## Strategic Analysis
+[Synthesized insights from council - not repetition]
+
+## Key Considerations
+[Relevant risks or factors - brief, no fear-mongering]
+
+## Board Room Recommendations
+1. [Specific action]
+2. [Specific action]
+3. [Specific action]
+
+Deliver your synthesis:"""
+
+    messages = [
+        {"role": "system", "content": CHAIRMAN_SYSTEM_PROMPT},
+        {"role": "user", "content": chairman_prompt}
+    ]
+
     response = await query_model(
         CHAIRMAN_MODEL['provider'],
         CHAIRMAN_MODEL['model_id'],
@@ -173,74 +284,39 @@ Provide a clear, well-reasoned final answer that represents the council's collec
     )
 
     if response is None:
-        # Fallback if chairman fails
-        return {
-            "model": CHAIRMAN_MODEL['name'],
-            "response": "Error: Unable to generate final synthesis."
-        }
+        return "Error: Unable to generate final synthesis."
 
-    return {
-        "model": CHAIRMAN_MODEL['name'],
-        "response": response.get('content', '')
-    }
+    return response.get('content', '')
 
 
 def parse_ranking_from_text(ranking_text: str) -> List[str]:
-    """
-    Parse the FINAL RANKING section from the model's response.
-
-    Args:
-        ranking_text: The full text response from the model
-
-    Returns:
-        List of response labels in ranked order
-    """
+    """Parse FINAL RANKING section from model response."""
     import re
 
-    # Look for "FINAL RANKING:" section
     if "FINAL RANKING:" in ranking_text:
-        # Extract everything after "FINAL RANKING:"
         parts = ranking_text.split("FINAL RANKING:")
         if len(parts) >= 2:
             ranking_section = parts[1]
-            # Try to extract numbered list format (e.g., "1. Response A")
             numbered_matches = re.findall(r'\d+\.\s*Response [A-D]', ranking_section)
             if numbered_matches:
-                # Extract just the "Response X" part
                 return [re.search(r'Response [A-D]', m).group() for m in numbered_matches]
-
-            # Fallback: Extract all "Response X" patterns in order
             matches = re.findall(r'Response [A-D]', ranking_section)
             return matches
 
-    # Fallback: try to find any "Response X" patterns in order
-    matches = re.findall(r'Response [A-D]', ranking_text)
-    return matches
+    return re.findall(r'Response [A-D]', ranking_text)
 
 
 def calculate_aggregate_rankings(
     stage2_results: List[Dict[str, Any]],
     label_to_model: Dict[str, str]
-) -> List[Dict[str, Any]]:
-    """
-    Calculate aggregate rankings across all models.
-
-    Args:
-        stage2_results: Rankings from each model
-        label_to_model: Mapping from anonymous labels to model names
-
-    Returns:
-        List of dicts with model name and average rank, sorted best to worst
-    """
+) -> Dict[str, float]:
+    """Calculate aggregate rankings across all models."""
     from collections import defaultdict
 
-    # Track positions for each model
     model_positions = defaultdict(list)
 
     for ranking in stage2_results:
         ranking_text = ranking['ranking']
-
-        # Parse the ranking from the structured format
         parsed_ranking = parse_ranking_from_text(ranking_text)
 
         for position, label in enumerate(parsed_ranking, start=1):
@@ -248,95 +324,44 @@ def calculate_aggregate_rankings(
                 model_name = label_to_model[label]
                 model_positions[model_name].append(position)
 
-    # Calculate average position for each model
-    aggregate = []
+    aggregate = {}
     for model, positions in model_positions.items():
         if positions:
-            avg_rank = sum(positions) / len(positions)
-            aggregate.append({
-                "model": model,
-                "average_rank": round(avg_rank, 2),
-                "rankings_count": len(positions)
-            })
-
-    # Sort by average rank (lower is better)
-    aggregate.sort(key=lambda x: x['average_rank'])
+            aggregate[model] = sum(positions) / len(positions)
 
     return aggregate
 
 
 async def generate_conversation_title(user_query: str) -> str:
-    """
-    Generate a short title for a conversation based on the first user message.
-
-    Args:
-        user_query: The first user message
-
-    Returns:
-        A short title (3-5 words)
-    """
-    title_prompt = f"""Generate a very short title (3-5 words maximum) that summarizes the following question.
-The title should be concise and descriptive. Do not use quotes or punctuation in the title.
+    """Generate a short title for a conversation."""
+    title_prompt = f"""Generate a very short title (3-5 words maximum) for this question. No quotes or punctuation.
 
 Question: {user_query}
 
 Title:"""
 
     messages = [{"role": "user", "content": title_prompt}]
-
-    # Use Gemini for title generation (fast and cheap)
-    response = await query_model("google", "gemini-2.0-flash", messages, timeout=30.0)
+    response = await query_model("google", "gemini-2.0-flash-exp", messages, timeout=30.0)
 
     if response is None:
-        # Fallback to a generic title
         return "New Conversation"
 
-    title = response.get('content', 'New Conversation').strip()
-
-    # Clean up the title - remove quotes, limit length
-    title = title.strip('"\'')
-
-    # Truncate if too long
-    if len(title) > 50:
-        title = title[:47] + "..."
-
-    return title
+    title = response.get('content', 'New Conversation').strip().strip('"\'')
+    return title[:50] if len(title) > 50 else title
 
 
-async def run_full_council(user_query: str) -> Tuple[List, List, Dict, Dict]:
-    """
-    Run the complete 3-stage council process.
-
-    Args:
-        user_query: The user's question
-
-    Returns:
-        Tuple of (stage1_results, stage2_results, stage3_result, metadata)
-    """
-    # Stage 1: Collect individual responses
+async def run_full_council(user_query: str) -> Tuple[List, List, str, Dict]:
+    """Run the complete 3-stage council process."""
     stage1_results = await stage1_collect_responses(user_query)
 
-    # If no models responded successfully, return error
     if not stage1_results:
-        return [], [], {
-            "model": "error",
-            "response": "All models failed to respond. Please try again."
-        }, {}
+        return [], [], "Error: All models failed to respond.", {}
 
-    # Stage 2: Collect rankings
     stage2_results, label_to_model = await stage2_collect_rankings(user_query, stage1_results)
-
-    # Calculate aggregate rankings
     aggregate_rankings = calculate_aggregate_rankings(stage2_results, label_to_model)
 
-    # Stage 3: Synthesize final answer
-    stage3_result = await stage3_synthesize_final(
-        user_query,
-        stage1_results,
-        stage2_results
-    )
+    stage3_result = await stage3_synthesize_final(user_query, stage1_results, stage2_results)
 
-    # Prepare metadata
     metadata = {
         "label_to_model": label_to_model,
         "aggregate_rankings": aggregate_rankings

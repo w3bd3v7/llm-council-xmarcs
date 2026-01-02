@@ -5,20 +5,12 @@ import Stage2 from './Stage2';
 import Stage3 from './Stage3';
 import './ChatInterface.css';
 
-export default function ChatInterface({
-  conversation,
-  onSendMessage,
-  isLoading,
-}) {
+export default function ChatInterface({ conversation, onSendMessage, isLoading }) {
   const [input, setInput] = useState('');
   const messagesEndRef = useRef(null);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
   useEffect(() => {
-    scrollToBottom();
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [conversation]);
 
   const handleSubmit = (e) => {
@@ -29,20 +21,12 @@ export default function ChatInterface({
     }
   };
 
-  const handleKeyDown = (e) => {
-    // Submit on Enter (without Shift)
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSubmit(e);
-    }
-  };
-
   if (!conversation) {
     return (
       <div className="chat-interface">
         <div className="empty-state">
-          <h2>Welcome to LLM Council</h2>
-          <p>Create a new conversation to get started</p>
+          <h2>Welcome to The Board Room</h2>
+          <p>Your strategic AI council awaits. Create a new session to begin.</p>
         </div>
       </div>
     );
@@ -53,8 +37,8 @@ export default function ChatInterface({
       <div className="messages-container">
         {conversation.messages.length === 0 ? (
           <div className="empty-state">
-            <h2>Start a conversation</h2>
-            <p>Ask a question to consult the LLM Council</p>
+            <h2>Start Your Session</h2>
+            <p>Present your strategic question to The Board Room council.</p>
           </div>
         ) : (
           conversation.messages.map((msg, index) => (
@@ -63,80 +47,39 @@ export default function ChatInterface({
                 <div className="user-message">
                   <div className="message-label">You</div>
                   <div className="message-content">
-                    <div className="markdown-content">
-                      <ReactMarkdown>{msg.content}</ReactMarkdown>
-                    </div>
+                    <ReactMarkdown>{msg.content}</ReactMarkdown>
                   </div>
                 </div>
               ) : (
                 <div className="assistant-message">
-                  <div className="message-label">LLM Council</div>
-
-                  {/* Stage 1 */}
-                  {msg.loading?.stage1 && (
-                    <div className="stage-loading">
-                      <div className="spinner"></div>
-                      <span>Running Stage 1: Collecting individual responses...</span>
-                    </div>
-                  )}
+                  <div className="message-label">The Board Room</div>
+                  {msg.loading?.stage1 && <div className="stage-loading"><div className="spinner"></div><span>Stage 1: Gathering Council Perspectives...</span></div>}
                   {msg.stage1 && <Stage1 responses={msg.stage1} />}
-
-                  {/* Stage 2 */}
-                  {msg.loading?.stage2 && (
-                    <div className="stage-loading">
-                      <div className="spinner"></div>
-                      <span>Running Stage 2: Peer rankings...</span>
-                    </div>
-                  )}
-                  {msg.stage2 && (
-                    <Stage2
-                      rankings={msg.stage2}
-                      labelToModel={msg.metadata?.label_to_model}
-                      aggregateRankings={msg.metadata?.aggregate_rankings}
-                    />
-                  )}
-
-                  {/* Stage 3 */}
-                  {msg.loading?.stage3 && (
-                    <div className="stage-loading">
-                      <div className="spinner"></div>
-                      <span>Running Stage 3: Final synthesis...</span>
-                    </div>
-                  )}
+                  {msg.loading?.stage2 && <div className="stage-loading"><div className="spinner"></div><span>Stage 2: Peer Rankings...</span></div>}
+                  {msg.stage2 && <Stage2 rankings={msg.stage2} labelToModel={msg.metadata?.label_to_model} aggregateRankings={msg.metadata?.aggregate_rankings} />}
+                  {msg.loading?.stage3 && <div className="stage-loading"><div className="spinner"></div><span>Stage 3: Chairman Synthesis...</span></div>}
                   {msg.stage3 && <Stage3 finalResponse={msg.stage3} />}
                 </div>
               )}
             </div>
           ))
         )}
-
-        {isLoading && (
-          <div className="loading-indicator">
-            <div className="spinner"></div>
-            <span>Consulting the council...</span>
-          </div>
-        )}
-
         <div ref={messagesEndRef} />
       </div>
 
-      {conversation.messages.length === 0 && (
+      {conversation && (
         <form className="input-form" onSubmit={handleSubmit}>
           <textarea
             className="message-input"
-            placeholder="Ask your question... (Shift+Enter for new line, Enter to send)"
+            placeholder="Present your strategic question..."
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
+            onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit(e); } }}
             disabled={isLoading}
-            rows={3}
+            rows={2}
           />
-          <button
-            type="submit"
-            className="send-button"
-            disabled={!input.trim() || isLoading}
-          >
-            Send
+          <button type="submit" className="send-button" disabled={!input.trim() || isLoading}>
+            {isLoading ? <div className="spinner"></div> : 'Send'}
           </button>
         </form>
       )}
