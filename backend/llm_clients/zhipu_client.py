@@ -2,13 +2,13 @@
 
 import httpx
 from typing import List, Dict, Any, Optional
-from config import ZHIPU_API_KEY, ZHIPU_API_URL
+from config import ZAI_GLM_XO_API_KEY, ZHIPU_API_URL
 
 MAX_OUTPUT_TOKENS = 16384
 
 
 async def query_glm(model_id: str, messages: List[Dict[str, str]], timeout: float = 180.0) -> Optional[Dict[str, Any]]:
-    headers = {"Authorization": f"Bearer {ZHIPU_API_KEY}", "Content-Type": "application/json"}
+    headers = {"Authorization": f"Bearer {ZAI_GLM_XO_API_KEY}", "Content-Type": "application/json"}
     payload = {"model": model_id, "messages": messages, "max_tokens": MAX_OUTPUT_TOKENS, "temperature": 0.2}
 
     try:
